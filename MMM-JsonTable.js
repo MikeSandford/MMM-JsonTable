@@ -7,10 +7,12 @@ Module.register("MMM-JsonTable", {
 	// Default module config.
 	defaults: {
 		url: "",
+		headers: {},
 		arrayName: null,
 		keepColumns: [],
 		size: 0,
-		tryFormatDate: false,
+		dates: [],
+		numbers: [],
 		updateInterval: 15000
 	},
 
@@ -28,7 +30,7 @@ Module.register("MMM-JsonTable", {
 
 	// Request node_helper to get json from url
 	getJson: function () {
-		this.sendSocketNotification("MMM-JsonTable_GET_JSON", this.config.url);
+		this.sendSocketNotification("MMM-JsonTable_GET_JSON", this.config);
 	},
 
 	socketNotificationReceived: function (notification, payload) {
@@ -52,10 +54,10 @@ Module.register("MMM-JsonTable", {
 			wrapper.innerHTML = "Awaiting json data...";
 			return wrapper;
 		}
-		
+
 		var table = document.createElement("table");
 		var tbody = document.createElement("tbody");
-		
+
 		var items = [];
 		if (this.config.arrayName) {
 			items = this.jsonData[this.config.arrayName];
@@ -85,13 +87,18 @@ Module.register("MMM-JsonTable", {
 		var row = document.createElement("tr");
 		for (var key in jsonObject) {
 			var cell = document.createElement("td");
-			
+
 			var valueToDisplay = "";
 			if (key === "icon") {
 				cell.classList.add("fa", jsonObject[key]);
 			}
-			else if (this.config.tryFormatDate) {
-				valueToDisplay = this.getFormattedValue(jsonObject[key]);
+			//else if (this.config.tryFormatDate) {
+			else if(this.config.dates.includes(key)){
+				valueToDisplay = this.getFormattedDate(jsonObject[key]);
+			}
+			else if (this.config.numbers.includes(key)) {
+				valueToDisplay = this.getFormattedNumber(jsonObject[key]);
+				cell.style.textAlign = "right";
 			}
 			else {
 				if ( this.config.keepColumns.length == 0 || this.config.keepColumns.indexOf(key) >= 0 ){
@@ -117,7 +124,24 @@ Module.register("MMM-JsonTable", {
 	},
 
 	// Format a date string or return the input
-	getFormattedValue: function (input) {
+	getFormattedDate: function (input) {
+		var m = moment(input);
+		if (typeof input === "string" && m.isValid()) {
+			// Show a formatted time if it occures today
+			if (m.isSame(new Date(), "day") && m.hours() !== 0 && m.minutes() !== 0 && m.seconds() !== 0) {
+				return m.format("HH:mm:ss");
+			}
+			else {
+				return m.format("YYYY-MM-DD");
+			}
+		}
+		else {
+			return input;
+		}
+	}
+
+	// Format a date string or return the input
+	getFormattedNumber: function (input) {
 		var m = moment(input);
 		if (typeof input === "string" && m.isValid()) {
 			// Show a formatted time if it occures today

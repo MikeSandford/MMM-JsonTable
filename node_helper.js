@@ -6,14 +6,14 @@ module.exports = NodeHelper.create({
 		console.log('MMM-JsonTable helper started...');
 	},
 
-	getJson: function (url) {
+	getJson: function (config) {
 		var self = this;
 
-		request({ url: url, method: 'GET' }, function (error, response, body) {
+		request({ url: config.url, method: 'GET', headers: config.headers }, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				var json = JSON.parse(body);
 				// Send the json data back with the url to distinguish it on the receiving part
-				self.sendSocketNotification("MMM-JsonTable_JSON_RESULT", {url: url, data: json});
+				self.sendSocketNotification("MMM-JsonTable_JSON_RESULT", {url: config.url, data: json});
 			}
 		});
 
